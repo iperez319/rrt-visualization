@@ -25,19 +25,30 @@ import pygame.draw
 #from matplotlib.path import Path 
 #import matplotlib.patches as patches
 
+class Boundaries():
+    def __init__(self,x1,y1,x2,y2):
+        self.x1 = x1
+        self.y1 = y1
+        self.x2 = x2
+        self.y2 = y2
+
+
 class RRT():
-    def __init__(self,start,end,min_length,max_length,node_number):
+    def __init__(self,start,end,min_length,max_length,node_number,boundaries):
         self.start= start
         self.end=end
         self.min_length = min_length
         self.max_length=max_length
         self.node_number = node_number
         self.screen_size=(800,800)
-        self.color = (0,0,0)
+        self.color = (255,255,0)
+        self.color1 = (0,0,255)
+        self.colorRect= (255,0,255)
         self.radius = 20
         self.nodes = []
         self.nodes.append(start)
         self.node_pairs=[]
+        self.boundaries = boundaries
     
     def dist(self,p1,p2):
         return math.sqrt((p2[0]-p1[0])**2 + (p2[1]-p1[1])**2)
@@ -49,6 +60,12 @@ class RRT():
                 closest = node
         return closest
 
+    def isValid(self,p1):
+        for i in self.boundaries:
+            if (p1[0] > i.x1 and p1[0] < i.x2) and (p1[1] > i.y1 and p1[1] < i.y2):
+                return False
+        return True
+
     def new_node(self):
         x = int(random.randint(0,self.screen_size[0]+1))
         y= int(random.randint(0,self.screen_size[1]+1))
@@ -59,14 +76,6 @@ class RRT():
             length = self.dist(closest,nn)
             x = closest[0]+int(self.max_length*(x-closest[0])/length)
             y = closest[1]+int(self.max_length*(y-closest[1])/length)   
-
-            """
-            angle = math.atan((nn[1]-closest[1])/(nn[0]-closest[0]))
-            x=int(closest[0]+self.max_length*math.cos(angle))
-            y = int(closest[1]+self.max_length*math.sin(angle))
-            print(x,y)
-            print()
-            """
             nn=(x,y)
 
         closest = self.find_closest(nn)
@@ -77,12 +86,9 @@ class RRT():
                 nn = self.new(node)
             x = closest[0]+int(self.min_length*(x-closest[0])/length)
             y = closest[1]+int(self.min_length*(y-closest[1])/length)
-            """
-            angle = math.atan((nn[1]-closest[1])/(nn[0]-closest[0]))
-            x=int(closest[0]+self.min_length*math.cos(angle))
-            y = int(closest[1]+self.min_length*math.sin(angle))
-            nn=(x,y)
-            """
+
+        if not self.isValid(nn):
+            closest,nn = self.new_node()
 
         return closest,nn
 
@@ -101,13 +107,20 @@ class RRT():
         screen.fill(white)
         
         #draws a circle around the startpoint
-        pygame.draw.circle(screen,self.color,self.start,self.radius)
+        pygame.draw.circle(screen,self.color1,self.start,self.radius)
 
         #draws a circle around the endpoint
         pygame.draw.circle(screen, self.color, self.end, self.radius)
 
+        for i in self.boundaries:
+            pygame.draw.rect(screen,self.colorRect,pygame.Rect(i.x1,i.y1,abs(i.x2-i.x1),abs(i.y2-i.y1)))
+
+        #pygame.draw.rect(screen,self.colorRect,)
+
         for n in range(self.node_number):
+
             cl, nn = self.new_node()
+
             """
             x = int(random.randint(0,480+1))
             y= int(random.randint(0,640+1))
@@ -128,12 +141,16 @@ class RRT():
             self.nodes.append(nn)
             self.node_pairs.append((cl,nn))
 
-            blue = (0,0,255)
-            pygame.draw.circle(screen,blue,nn,3)
-            pygame.draw.line(screen,blue,cl,nn,2)
+            red = (255,0,0)
+            pygame.draw.circle(screen,red,nn,3)
+            pygame.draw.line(screen,red,cl,nn,2)
+
             #updates the screen when you add a new node
             pygame.display.update()
-        
+
+            if (self.dist(nn,self.end) <= self.radius):
+                break
+
             if (pygame.event.wait().type == pygame.QUIT):
                 break
         while True:
@@ -146,39 +163,5 @@ class RRT():
                 break
             
 if __name__ == '__main__':
-    RRT((375,375),(750,750),10,50,500).main()
-
-
-"""
-start=(1,1)
-end=(50,50)
-
-verts = [start]
-codes=[Path.MOVETO]
-stem_length = 5
-
-previous = start
-
-for i in range(5):
-	x = random.randint(-10,10+1)
-	y = random.randint(-10,10+1)
-	if (math.sqrt((x-previous[0])**2+(y-previous[1])**2) > stem_length):
-		x /=math.sqrt((x-previous[0])**2+(y-previous[1])**2)
-		y /= math.sqrt((x-previous[0])**2+(y-previous[1])**2)
-	#y_limit = int(math.sqrt(stem_length**2-x**2))
-	#y = random.randint(-y_limit,y_limit)
-	point=(x,y)
-	verts=[start,point]
-	codes=[Path.MOVETO,Path.LINETO]
-
-	path=Path(verts,codes)
-
-	fig,ax = plt.subplots()
-	patch = patches.PathPatch(path)
-	ax.add_patch(patch)
-	ax.set_xlim(-10,10)
-	ax.set_ylim(-10,10)
-	plt.show()
-	print(point)
-	previous = point
-"""
+    boundaries = [Boundaries(100,100,200,200), Boundaries(101,202,303,404)]
+    RRT((375,375),(750,750),5,20,500,boundaries).main()
