@@ -83,7 +83,7 @@ class RRT():
         if self.dist(closest,nn) < self.min_length:
             length = self.dist(closest,nn)
             if length == 0:
-                nn = self.new(node)
+                nn = self.new_node()
             x = closest[0]+int(self.min_length*(x-closest[0])/length)
             y = closest[1]+int(self.min_length*(y-closest[1])/length)
 
