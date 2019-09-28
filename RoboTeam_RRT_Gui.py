@@ -155,7 +155,7 @@ class RRT():
                 break
         while True:
             # gets a single event from the event queue
-            event = pygame.event.wait()
+            event = pygame.event.get()
 
             # if the 'close' button of the window is pressed
             if event.type == pygame.QUIT:
